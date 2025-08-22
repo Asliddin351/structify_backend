@@ -1,48 +1,26 @@
+from django.db.models import Count, Q
+from django.http import JsonResponse, HttpResponse
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, AllowAny
-from myapp.models import Forum, Comment, Book, Article
-from myapp.serializers import ForumSerializer, CommentSerializer, BookSerializer, ArticleSerializer, UserSerializer, RegisterSerializer
+from myapp.models import Forum, Comment, Book, Article, Category
+from myapp.serializers import (
+    ForumSerializer, CommentSerializer, BookSerializer, ArticleSerializer,
+    UserSerializer, RegisterSerializer, CategorySerializer
+)
 from django.contrib.auth.models import User
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+import csv
+
+
+# ======= Пользователи =======
 
 class UserViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.all()
+    queryset = User.objects.all().order_by("id")
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
 
-class ForumViewSet(viewsets.ModelViewSet):
-    queryset = Forum.objects.all()
-    serializer_class = ForumSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
-
-    def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
-
-class CommentViewSet(viewsets.ModelViewSet):
-    queryset = Comment.objects.all()
-    serializer_class = CommentSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
-
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
-
-class BookViewSet(viewsets.ModelViewSet):
-    queryset = Book.objects.all()   
-    serializer_class = BookSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
-
-    def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
-
-class ArticleViewSet(viewsets.ModelViewSet):
-    queryset = Article.objects.all()
-    serializer_class = ArticleSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
-
-    def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
 
 class RegisterView(APIView):
     permission_classes = [AllowAny]
@@ -53,3 +31,96 @@ class RegisterView(APIView):
             serializer.save()
             return Response({"message": "User registered successfully"}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# ======= Форумы / Комментарии =======
+
+class ForumViewSet(viewsets.ModelViewSet):
+    queryset = Forum.objects.all().order_by("-created_at")
+    serializer_class = ForumSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+
+
+class CommentViewSet(viewsets.ModelViewSet):
+    queryset = Comment.objects.all().order_by("-created_at")
+    serializer_class = CommentSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+
+# ======= Книги =======
+
+class BookViewSet(viewsets.ModelViewSet):
+    queryset = Book.objects.all().order_by("-created_at")
+    serializer_class = BookSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+
+
+# ======= Категории =======
+
+class CategoryViewSet(viewsets.ModelViewSet):
+    queryset = Category.objects.all().order_by("name")
+    serializer_class = CategorySerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+
+# ======= Статьи (с файлом и категорией) =======
+
+class ArticleViewSet(viewsets.ModelViewSet):
+    queryset = Article.objects.select_related("category", "author").all().order_by("-created_at")
+    serializer_class = ArticleSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
+
+
+# ======= Отчёты =======
+
+class ArticlesReportJSON(APIView):
+    """
+    Сводка: всего статей, сколько с прикреплённым файлом,
+    и разрез по категориям.
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        by_cat = (
+            Category.objects
+            .annotate(
+                total=Count("articles"),
+                with_file=Count("articles", filter=Q(articles__file__isnull=False))
+            )
+            .values("id", "name", "total", "with_file")
+            .order_by("name")
+        )
+        summary = {
+            "total_articles": Article.objects.count(),
+            "with_file": Article.objects.filter(file__isnull=False).count(),
+        }
+        return JsonResponse({"summary": summary, "by_category": list(by_cat)})
+
+
+class ArticlesReportCSV(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = 'attachment; filename="articles_report.csv"'
+        writer = csv.writer(response)
+        writer.writerow(["Category", "Total", "With File"])
+        rows = Category.objects.annotate(
+            total=Count("articles"),
+            with_file=Count("articles", filter=Q(articles__file__isnull=False))
+        ).order_by("name")
+        for r in rows:
+            writer.writerow([r.name, r.total, r.with_file])
+        return response

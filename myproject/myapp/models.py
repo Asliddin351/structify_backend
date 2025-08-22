@@ -1,6 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+
+# ======= Форумы / Комментарии =======
+
 class Forum(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField()
@@ -11,6 +14,7 @@ class Forum(models.Model):
     def __str__(self):
         return self.title
 
+
 class Comment(models.Model):
     forum = models.ForeignKey(Forum, on_delete=models.CASCADE, related_name='comments')
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -20,6 +24,9 @@ class Comment(models.Model):
 
     def __str__(self):
         return f"Comment by {self.user.username} on {self.forum.title}"
+
+
+# ======= Книги =======
 
 class Book(models.Model):
     title = models.CharField(max_length=200)
@@ -32,10 +39,33 @@ class Book(models.Model):
     def __str__(self):
         return self.title
 
+
+# ======= Категории и Статьи =======
+
+class Category(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+
+    class Meta:
+        verbose_name_plural = "Categories"
+
+    def __str__(self):
+        return self.name
+
+
+def article_upload_to(instance, filename: str) -> str:
+    # Сохраняем файлы в media/articles/<article_id|new>/filename
+    return f"articles/{instance.id or 'new'}/{filename}"
+
+
 class Article(models.Model):
     title = models.CharField(max_length=200)
     content = models.TextField()
     author = models.ForeignKey(User, on_delete=models.CASCADE)
+    # NEW: файл и категория
+    file = models.FileField(upload_to=article_upload_to, null=True, blank=True)
+    category = models.ForeignKey(
+        Category, on_delete=models.SET_NULL, null=True, blank=True, related_name="articles"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

@@ -1,35 +1,31 @@
 """
-URL configuration for myproject project.
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/4.2/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
+URL configuration for the API layer of myapp.
 """
-
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from myapp.views import ForumViewSet, CommentViewSet, BookViewSet, ArticleViewSet, UserViewSet, RegisterView
+
+from myapp.views import (
+    ForumViewSet, CommentViewSet, BookViewSet, ArticleViewSet,
+    UserViewSet, RegisterView, CategoryViewSet,
+    ArticlesReportJSON, ArticlesReportCSV,
+)
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 router = DefaultRouter()
-router.register(r'users', UserViewSet)
-router.register(r'forums', ForumViewSet)
-router.register(r'comments', CommentViewSet)
-router.register(r'books', BookViewSet)
-router.register(r'articles', ArticleViewSet)
+router.register(r'users', UserViewSet, basename='user')
+router.register(r'forums', ForumViewSet, basename='forum')
+router.register(r'comments', CommentViewSet, basename='comment')
+router.register(r'books', BookViewSet, basename='book')
+router.register(r'categories', CategoryViewSet, basename='category')
+router.register(r'articles', ArticleViewSet, basename='article')
 
 urlpatterns = [
     path('', include(router.urls)),
     path('register/', RegisterView.as_view(), name='register'),
     path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+
+    # Reports
+    path('reports/articles/', ArticlesReportJSON.as_view(), name='articles_report_json'),
+    path('reports/articles.csv', ArticlesReportCSV.as_view(), name='articles_report_csv'),
 ]
