@@ -106,7 +106,7 @@ USE_TZ = True
 # --- STATIC & MEDIA ---
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_DIRS = [BASE_DIR / 'static'] if (BASE_DIR / 'static').exists() else []
+STATICFILES_DIRS = [BASE_DIR / 'static'] 
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -114,8 +114,4 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # --- DEFAULTS ---
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-MEDIA_URL = '/media/'
-from pathlib import Path
-BASE_DIR = Path(__file__).resolve().parent.parent
-MEDIA_ROOT = BASE_DIR / 'media'
 
