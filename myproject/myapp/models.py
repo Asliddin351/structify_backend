@@ -28,11 +28,17 @@ class Comment(models.Model):
 
 # ======= Книги =======
 
+def book_pdf_upload_to(instance, filename: str) -> str:
+    # Сохраняем PDF-файлы в media/books/pdfs/<book_id|new>/filename
+    return f"books/pdfs/{instance.id or 'new'}/{filename}"
+
+
 class Book(models.Model):
     title = models.CharField(max_length=200)
     author = models.CharField(max_length=100)
     isbn = models.CharField(max_length=13, unique=True)
     published_date = models.DateField()
+    pdf_file = models.FileField(upload_to=book_pdf_upload_to, null=True, blank=True)  # Добавлено поле для PDF
     created_by = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -61,7 +67,6 @@ class Article(models.Model):
     title = models.CharField(max_length=200)
     content = models.TextField()
     author = models.ForeignKey(User, on_delete=models.CASCADE)
-    # NEW: файл и категория
     file = models.FileField(upload_to=article_upload_to, null=True, blank=True)
     category = models.ForeignKey(
         Category, on_delete=models.SET_NULL, null=True, blank=True, related_name="articles"
