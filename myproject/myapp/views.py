@@ -1,7 +1,10 @@
 from django.db.models import Count, Q
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse, HttpResponse, FileResponse
+from django.conf import settings
+from django.core.exceptions import PermissionDenied
+import os
 from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticatedOrReadOnly, AllowAny
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, AllowAny, IsAdminUser
 from myapp.models import Forum, Comment, Book, Article, Category
 from myapp.serializers import (
     ForumSerializer, CommentSerializer, BookSerializer, ArticleSerializer,
@@ -13,14 +16,12 @@ from rest_framework.response import Response
 from rest_framework import status
 import csv
 
-
 # ======= Пользователи =======
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all().order_by("id")
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
-
 
 class RegisterView(APIView):
     permission_classes = [AllowAny]
@@ -32,7 +33,6 @@ class RegisterView(APIView):
             return Response({"message": "User registered successfully"}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
 # ======= Форумы / Комментарии =======
 
 class ForumViewSet(viewsets.ModelViewSet):
@@ -43,7 +43,6 @@ class ForumViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
 
-
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all().order_by("-created_at")
     serializer_class = CommentSerializer
@@ -52,17 +51,19 @@ class CommentViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
-
 # ======= Книги =======
 
 class BookViewSet(viewsets.ModelViewSet):
     queryset = Book.objects.all().order_by("-created_at")
     serializer_class = BookSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'destroy']:
+            return [IsAdminUser()]  # Только администраторы могут создавать, обновлять или удалять
+        return [IsAuthenticatedOrReadOnly()]  # Чтение доступно всем авторизованным
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
-
 
 # ======= Категории =======
 
@@ -70,7 +71,6 @@ class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all().order_by("name")
     serializer_class = CategorySerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
-
 
 # ======= Статьи (с файлом и категорией) =======
 
@@ -81,7 +81,6 @@ class ArticleViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
-
 
 # ======= Отчёты =======
 
@@ -108,7 +107,6 @@ class ArticlesReportJSON(APIView):
         }
         return JsonResponse({"summary": summary, "by_category": list(by_cat)})
 
-
 class ArticlesReportCSV(APIView):
     permission_classes = [AllowAny]
 
@@ -124,3 +122,14 @@ class ArticlesReportCSV(APIView):
         for r in rows:
             writer.writerow([r.name, r.total, r.with_file])
         return response
+
+# ======= Защищённое обслуживание файлов =======
+
+def serve_protected_file(request, file_path):
+    if not request.user.is_authenticated or not request.user.is_staff:
+        raise PermissionDenied("Доступ запрещен")
+    full_path = os.path.join(settings.MEDIA_ROOT, file_path)
+    if os.path.exists(full_path):
+        # Отправка файла как вложения для предотвращения прямого просмотра
+        return FileResponse(open(full_path, 'rb'), as_attachment=True)
+    raise FileNotFoundError("Файл не найден")

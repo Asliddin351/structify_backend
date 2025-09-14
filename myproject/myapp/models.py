@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from ckeditor.fields import RichTextField
 
 
 # ======= Форумы / Комментарии =======
@@ -36,7 +37,7 @@ def book_pdf_upload_to(instance, filename: str) -> str:
 class Book(models.Model):
     title = models.CharField(max_length=200)
     author = models.CharField(max_length=100)
-    isbn = models.CharField(max_length=13, unique=True)
+    isbn = models.CharField(max_length=13, unique=True, null=True, blank=True)  # Сделано необязательным
     published_date = models.DateField()
     pdf_file = models.FileField(upload_to=book_pdf_upload_to, null=True, blank=True)  # Добавлено поле для PDF
     created_by = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -65,7 +66,7 @@ def article_upload_to(instance, filename: str) -> str:
 
 class Article(models.Model):
     title = models.CharField(max_length=200)
-    content = models.TextField()
+    content = RichTextField()  # Используем CKEditor для форматированного текста
     author = models.ForeignKey(User, on_delete=models.CASCADE)
     file = models.FileField(upload_to=article_upload_to, null=True, blank=True)
     category = models.ForeignKey(

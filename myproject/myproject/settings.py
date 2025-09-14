@@ -24,16 +24,17 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'drf_spectacular',
-
     'rest_framework',
     # JWT (не обязательно включать blacklist, но можно)
     # 'rest_framework_simplejwt.token_blacklist',
     'myapp',
+    'ckeditor',
+    'ckeditor_uploader',  # Добавляем для поддержки загрузки файлов
 ]
 
 # --- DRF / AUTH ---
 REST_FRAMEWORK = {
-     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticatedOrReadOnly',
     ],
@@ -116,4 +117,19 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # --- DEFAULTS ---
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# --- CKEDITOR CONFIG ---
+CKEDITOR_CONFIGS = {
+    'default': {
+        'toolbar': 'full',
+        'height': 400,
+        'width': '100%',
+        'extraPlugins': ','.join([
+            'uploadimage',  # Поддержка загрузки изображений
+            'codesnippet',  # Поддержка вставки кода
+        ]),
+        'filebrowserUploadUrl': '/ckeditor/upload/',
+    },
+}
 
+# --- CKEDITOR UPLOADER ---
+CKEDITOR_UPLOAD_PATH = 'uploads/'  # Путь для загружаемых файлов относительно MEDIA_ROOT

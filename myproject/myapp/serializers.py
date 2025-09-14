@@ -78,13 +78,12 @@ class ArticleSerializer(serializers.ModelSerializer):
             "title",
             "content",
             "author",
-            "file",        # <— загрузка файла
-            "category",    # <— выбор категории
+            "file",        # Загрузка файла
+            "category",    # Выбор категории
             "created_at",
             "updated_at",
         )
 
-    # Пример простой валидации файла (можно убрать при желании)
     def validate_file(self, f):
         if not f:
             return f
@@ -92,3 +91,10 @@ class ArticleSerializer(serializers.ModelSerializer):
         if f.size > max_mb * 1024 * 1024:
             raise serializers.ValidationError(f"Файл больше {max_mb} МБ.")
         return f
+
+    def validate_content(self, value):
+        # Опциональная валидация длины содержимого статьи
+        max_length = 100000  # Например, 100,000 символов
+        if len(value) > max_length:
+            raise serializers.ValidationError(f"Содержимое статьи не должно превышать {max_length} символов.")
+        return value

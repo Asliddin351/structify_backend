@@ -15,9 +15,12 @@ urlpatterns = [
 
     # API endpoints
     path('api/', include('myapp.urls')),
+
+    # CKEditor uploader
+    path('ckeditor/', include('ckeditor_uploader.urls')),  # Добавляем маршруты для загрузки файлов CKEditor
 ]
 
-# Раздача медиа только в режиме разработки
-# if settings.DEBUG:
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+# Раздача медиа и статических файлов только в режиме разработки
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
