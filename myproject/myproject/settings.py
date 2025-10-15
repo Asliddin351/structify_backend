@@ -14,6 +14,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-wiell9!0-xchf29izwd_q07f^w8n+&dv-$ijd31n+kox50-en2'  # перемести в .env на проде
 DEBUG = True
 ALLOWED_HOSTS = ["*"]  # сузить на проде
+CORS_ALLOW_ALL_ORIGINS=True
 
 # --- APPS ---
 INSTALLED_APPS = [
@@ -25,6 +26,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'drf_spectacular',
     'rest_framework',
+     "corsheaders",
     # JWT (не обязательно включать blacklist, но можно)
     # 'rest_framework_simplejwt.token_blacklist',
     'myapp',
@@ -57,6 +59,7 @@ SIMPLE_JWT = {
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    "corsheaders.middleware.CorsMiddleware",
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
