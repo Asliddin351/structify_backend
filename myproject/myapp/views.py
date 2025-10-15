@@ -97,12 +97,14 @@ class ArticleAttachmentUploadView(APIView):
 
         return Response({
             # "errorMessage": "",
-            "result": {
-                "id": attachment.id,
-                "url": attachment.file.url,
-                "name": os.path.basename(attachment.file.name),
-                "size": attachment.file.size,
-            }
+            "result": [
+                {
+                    # "id": attachment.id,
+                    "url": attachment.file.url,
+                    "name": os.path.basename(attachment.file.name),
+                    "size": attachment.file.size,
+                }
+            ]
         }, status=status.HTTP_201_CREATED)
 
 
