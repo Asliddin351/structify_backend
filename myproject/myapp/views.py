@@ -96,7 +96,7 @@ class ArticleAttachmentUploadView(APIView):
         attachment = ArticleFileAttachment.objects.create(file=uploaded_file)
 
         return Response({
-            "errorMessage": "",
+            # "errorMessage": "",
             "result": {
                 "id": attachment.id,
                 "url": attachment.file.url,
