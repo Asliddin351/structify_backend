@@ -117,7 +117,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        article = serializer.save()
+        article = serializer.save(author=request.user)
         mark_article_attachment_files_as_used(article.content)
 
         headers = self.get_success_headers(serializer.data)
